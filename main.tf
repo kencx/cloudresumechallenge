@@ -89,18 +89,17 @@ resource "aws_dynamodb_table" "table" {
   }
 }
 
-resource "aws_dynamodb_table_item" "items" {
-  table_name = aws_dynamodb_table.table.name
-  hash_key   = aws_dynamodb_table.table.hash_key
-
-  for_each = toset(["resume.cheo.dev", "blog.cheo.dev"])
-  item     = <<ITEM
-{
-  "url": {"S": "${each.key}"},
-  "visits": {"N": "0"}
-}
-ITEM
-}
+# resource "aws_dynamodb_table_item" "items" {
+#   table_name = aws_dynamodb_table.table.name
+#   hash_key   = aws_dynamodb_table.table.hash_key
+#
+#   for_each = toset(["resume.cheo.dev", "blog.cheo.dev"])
+#   item     = <<ITEM
+# {
+#   "url": {"S": "${each.key}"}
+# }
+# ITEM
+# }
 
 # lambda
 resource "aws_lambda_function" "counter" {
@@ -153,52 +152,50 @@ data "archive_file" "lambda_function" {
 }
 
 # api gateway
-# resource "aws_apigatewayv2_api" "counter" {
-#   name          = "counter"
-#   protocol_type = "HTTP"
-# }
-#
-# resource "aws_apigatewayv2_stage" "counter" {
-#   api_id      = aws_apigatewayv2_api.counter.id
-#   name        = "default-stage"
-#   auto_deploy = true
-#
-#   access_log_settings {
-#     destination_arn = aws_cloudwatch_log_group.api_gw.arn
-#     format = jsonencode({
-#
-#     })
-#   }
-# }
-#
-# resource "aws_apigatewayv2_integration" "lambda" {
-#   api_id = aws_apigatewayv2_api.counter.id
-#
-#   integration_uri    = aws_lambda_function.counter.invoke_arn
-#   integration_type   = "AWS_PROXY"
-#   integration_method = "POST"
-#
-#   payload_format_version = 2.0
-# }
-#
-# resource "aws_apigatewayv2_route" "counter" {
-#   api_id = aws_apigatewayv2_api.counter.id
-#
-#   api_key_required = false
-#   route_key        = "POST /"
-#   target           = "integrations/${aws_apigatewayv2_integration.lambda.id}"
-# }
-#
+resource "aws_apigatewayv2_api" "counter" {
+  name          = "counter"
+  protocol_type = "HTTP"
+}
+
+resource "aws_apigatewayv2_stage" "counter" {
+  api_id      = aws_apigatewayv2_api.counter.id
+  name        = "$default"
+  auto_deploy = true
+
+  # access_log_settings {
+  #   destination_arn = aws_cloudwatch_log_group.api_gw.arn
+  #   format = jsonencode({
+  #
+  #   })
+  # }
+}
+
+resource "aws_apigatewayv2_integration" "lambda" {
+  api_id = aws_apigatewayv2_api.counter.id
+
+  integration_uri    = aws_lambda_function.counter.invoke_arn
+  integration_type   = "AWS_PROXY"
+  integration_method = "POST"
+
+  payload_format_version = "2.0"
+}
+
+resource "aws_apigatewayv2_route" "counter" {
+  api_id = aws_apigatewayv2_api.counter.id
+
+  api_key_required = false
+  route_key        = "POST /"
+  target           = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+}
+
 # resource "aws_cloudwatch_log_group" "api_gw" {
 #   name              = "aws/api_gw/${aws_apigatewayv2_api.counter.name}"
 #   retention_in_days = 30
 # }
-#
-# resource "aws_lambda_permission" "api_gw" {
-#   statement_id  = "AllowExecutionFromAPIGateway"
-#   action        = "lambda:InvokeFunction"
-#   function_name = aws_lambda_function.counter.function_name
-#   principal     = "apigateway.amazonaws.com"
-#
-#   source_arn = "${aws_apigatewayv2_api.counter.execution_arn}/*/*"
-# }
+
+resource "aws_lambda_permission" "api_gw" {
+  statement_id  = "AllowExecutionFromAPIGateway"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.counter.function_name
+  principal     = "apigateway.amazonaws.com"
+}
