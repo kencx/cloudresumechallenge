@@ -12,3 +12,4 @@ output "domain_name" {
   value       = local.site_url
   description = "Website URL"
 }
+

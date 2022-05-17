@@ -3,12 +3,13 @@ import boto3
 
 def lambda_handler(event, context):
     client = boto3.client('dynamodb')
+    data = json.loads(event['body'])
 
     response = client.update_item(
-            TableName=event["table"],
+            TableName=data["table"],
             Key={
                 "url": {
-                    'S': event["url"]
+                    'S': data["url"]
                     }
                 },
             UpdateExpression='SET visits = visits + :inc',
@@ -28,4 +29,3 @@ def lambda_handler(event, context):
         },
         'body': json.dumps(response)
     }
-
