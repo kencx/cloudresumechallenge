@@ -29,11 +29,12 @@ data "cloudflare_zone" "domain" {
 }
 
 resource "cloudflare_record" "resume_cname" {
-  zone_id = data.cloudflare_zone.domain.id
-  name    = var.subdomain
-  value   = aws_s3_bucket.resume.website_endpoint
-  type    = "CNAME"
-  proxied = true
+  zone_id    = data.cloudflare_zone.domain.id
+  name       = var.subdomain
+  value      = aws_s3_bucket.resume.website_endpoint
+  type       = "CNAME"
+  proxied    = true
+  depends_on = [aws_s3_bucket.resume]
 }
 
 resource "cloudflare_page_rule" "https" {
@@ -46,12 +47,14 @@ resource "cloudflare_page_rule" "https" {
 
 # s3
 resource "aws_s3_bucket" "resume" {
-  bucket = local.site_url
+  bucket        = local.site_url
+  force_destroy = true
 }
 
 resource "aws_s3_bucket_policy" "resume" {
-  bucket = aws_s3_bucket.resume.id
-  policy = data.aws_iam_policy_document.s3_policy_doc.json
+  bucket     = aws_s3_bucket.resume.id
+  policy     = data.aws_iam_policy_document.s3_policy_doc.json
+  depends_on = [aws_s3_bucket.resume]
 }
 
 resource "aws_s3_bucket_website_configuration" "resume" {
@@ -60,6 +63,7 @@ resource "aws_s3_bucket_website_configuration" "resume" {
   index_document {
     suffix = "index.html"
   }
+  depends_on = [aws_s3_bucket.resume]
 }
 
 data "aws_iam_policy_document" "s3_policy_doc" {
@@ -73,14 +77,15 @@ data "aws_iam_policy_document" "s3_policy_doc" {
       identifiers = ["*"]
     }
   }
+  depends_on = [aws_s3_bucket.resume]
 }
 
 # dynamodb
 resource "aws_dynamodb_table" "table" {
   name           = var.table_name
   billing_mode   = "PROVISIONED"
-  read_capacity  = 20
-  write_capacity = 20
+  read_capacity  = 5
+  write_capacity = 5
   hash_key       = "url"
 
   attribute {
@@ -89,17 +94,18 @@ resource "aws_dynamodb_table" "table" {
   }
 }
 
-# resource "aws_dynamodb_table_item" "items" {
-#   table_name = aws_dynamodb_table.table.name
-#   hash_key   = aws_dynamodb_table.table.hash_key
-#
-#   for_each = toset(["resume.cheo.dev", "blog.cheo.dev"])
-#   item     = <<ITEM
-# {
-#   "url": {"S": "${each.key}"}
-# }
-# ITEM
-# }
+resource "aws_dynamodb_table_item" "items" {
+  table_name = aws_dynamodb_table.table.name
+  hash_key   = aws_dynamodb_table.table.hash_key
+
+  for_each   = toset(var.sites)
+  item       = <<ITEM
+{
+  "url": {"S": "${each.key}"}
+}
+ITEM
+  depends_on = [aws_dynamodb_table.table]
+}
 
 # lambda
 resource "aws_lambda_function" "counter" {
@@ -110,6 +116,7 @@ resource "aws_lambda_function" "counter" {
   filename         = "${path.module}/lambda.zip"
   source_code_hash = data.archive_file.lambda_function.output_base64sha256
   handler          = "lambda_function.lambda_handler"
+  depends_on       = [aws_iam_role.lambda_counter]
 }
 
 resource "aws_iam_role" "lambda_counter" {
@@ -118,9 +125,10 @@ resource "aws_iam_role" "lambda_counter" {
 }
 
 resource "aws_iam_role_policy" "lambda_dynamodb_policy" {
-  name   = "counterUpdatePolicy"
-  role   = aws_iam_role.lambda_counter.id
-  policy = data.aws_iam_policy_document.lambda_dynomodb_policy_doc.json
+  name       = "counterUpdatePolicy"
+  role       = aws_iam_role.lambda_counter.id
+  policy     = data.aws_iam_policy_document.lambda_dynomodb_policy_doc.json
+  depends_on = [aws_iam_role.lambda_counter]
 }
 
 data "aws_iam_policy_document" "lambda_policy_doc" {
@@ -143,6 +151,7 @@ data "aws_iam_policy_document" "lambda_dynomodb_policy_doc" {
     ]
     resources = ["${aws_dynamodb_table.table.arn}"]
   }
+  depends_on = [aws_dynamodb_table.table]
 }
 
 data "archive_file" "lambda_function" {
@@ -167,6 +176,7 @@ resource "aws_apigatewayv2_stage" "counter" {
   api_id      = aws_apigatewayv2_api.counter.id
   name        = "$default"
   auto_deploy = true
+  depends_on  = [aws_apigatewayv2_api.counter]
 
   # access_log_settings {
   #   destination_arn = aws_cloudwatch_log_group.api_gw.arn
@@ -184,6 +194,7 @@ resource "aws_apigatewayv2_integration" "lambda" {
   integration_method = "POST"
 
   payload_format_version = "2.0"
+  depends_on             = [aws_apigatewayv2_api.counter, aws_lambda_function.counter]
 }
 
 resource "aws_apigatewayv2_route" "counter" {
@@ -192,6 +203,7 @@ resource "aws_apigatewayv2_route" "counter" {
   api_key_required = false
   route_key        = "POST /"
   target           = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+  depends_on       = [aws_apigatewayv2_api.counter, aws_apigatewayv2_integration.lambda]
 }
 
 # resource "aws_cloudwatch_log_group" "api_gw" {
@@ -204,4 +216,13 @@ resource "aws_lambda_permission" "api_gw" {
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.counter.function_name
   principal     = "apigateway.amazonaws.com"
+  depends_on    = [aws_lambda_function.counter]
+}
+
+resource "local_file" "outputs" {
+  content         = <<EOF
+api_url='{"url" : "${aws_apigatewayv2_stage.counter.invoke_url}"}';
+EOF
+  filename        = "${path.module}/site/docs/api_url.json"
+  file_permission = "0744"
 }

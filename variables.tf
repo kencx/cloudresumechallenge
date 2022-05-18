@@ -25,6 +25,12 @@ variable "table_name" {
   default     = "siteVisits"
 }
 
+variable "sites" {
+  type        = list(any)
+  description = "List of site's URLs"
+  default     = []
+}
+
 variable "lambda_source_path" {
   type        = string
   description = "Path to Lambda function source file"

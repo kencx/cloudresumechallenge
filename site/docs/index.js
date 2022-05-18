@@ -1,9 +1,9 @@
 
 var counterContainer = document.querySelector(".counter");
 
-function updateVisitCount(url, data) {
+function updateVisitCount(api, data) {
 
-	fetch(url, {
+	fetch(api, {
 		method: 'POST',
 		mode: 'cors',
 		body: JSON.stringify(data),
@@ -16,5 +16,6 @@ function updateVisitCount(url, data) {
 }
 
 const payload = { table: "siteVisits", url: "resume.cheo.dev" }
-updateVisitCount("https://2a7xi2wqdk.execute-api.ap-southeast-1.amazonaws.com/", payload)
+var url = JSON.parse(api_url).url;
+updateVisitCount(url, payload)
 
