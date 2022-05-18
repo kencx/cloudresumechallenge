@@ -8,3 +8,12 @@ build:
 
 serve: site/docs/index.html site/docs/build.css
 	cd site/docs && python -m http.server
+
+tplan:
+	terraform plan
+
+tapply:
+	terraform apply
+
+tdestroy:
+	terraform destroy

@@ -12,3 +12,8 @@ output "domain_name" {
   value       = local.site_url
   description = "Website URL"
 }
+
+output "api_gw_url" {
+  value       = aws_apigatewayv2_stage.counter.invoke_url
+  description = "URL for API Gateway"
+}

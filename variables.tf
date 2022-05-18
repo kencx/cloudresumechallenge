@@ -18,3 +18,20 @@ variable "cloudflare_api_token" {
   type        = string
   description = "Cloudflare API token"
 }
+
+variable "table_name" {
+  type        = string
+  description = "DynamoDB table name"
+  default     = "siteVisits"
+}
+
+variable "sites" {
+  type        = list(any)
+  description = "List of site's URLs"
+  default     = []
+}
+
+variable "lambda_source_path" {
+  type        = string
+  description = "Path to Lambda function source file"
+}
