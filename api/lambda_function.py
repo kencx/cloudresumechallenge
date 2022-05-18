@@ -12,9 +12,10 @@ def lambda_handler(event, context):
                     'S': data["url"]
                     }
                 },
-            UpdateExpression='SET visits = visits + :inc',
+            UpdateExpression='SET visits = if_not_exists(visits, :start) + :inc',
             ExpressionAttributeValues={
-                ':inc': {'N': '1'}
+                ':inc': {'N': '1'},
+                ':start': {'N': '0'},
                 },
             ReturnValues="UPDATED_NEW"
             )
