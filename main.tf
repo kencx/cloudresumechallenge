@@ -77,7 +77,7 @@ data "aws_iam_policy_document" "s3_policy_doc" {
 
 # dynamodb
 resource "aws_dynamodb_table" "table" {
-  name           = "siteVisits"
+  name           = var.table_name
   billing_mode   = "PROVISIONED"
   read_capacity  = 20
   write_capacity = 20
@@ -147,7 +147,7 @@ data "aws_iam_policy_document" "lambda_dynomodb_policy_doc" {
 
 data "archive_file" "lambda_function" {
   type        = "zip"
-  source_file = "${path.module}/api/lambda_function.py"
+  source_file = "${path.module}/${var.lambda_source_path}"
   output_path = "${path.module}/lambda.zip"
 }
 
