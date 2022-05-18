@@ -25,8 +25,7 @@ def lambda_handler(event, context):
         'headers': {
             'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
-            'Access-Control-Allow-Credentials': 'true',
             'Content-Type': 'application/json'
         },
-        'body': json.dumps(response)
+        'body': json.dumps(response["Attributes"]["visits"]["N"])
     }

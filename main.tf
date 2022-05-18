@@ -155,6 +155,12 @@ data "archive_file" "lambda_function" {
 resource "aws_apigatewayv2_api" "counter" {
   name          = "counter"
   protocol_type = "HTTP"
+
+  cors_configuration {
+    allow_headers = ["*"]
+    allow_methods = ["OPTIONS", "POST"]
+    allow_origins = ["*"]
+  }
 }
 
 resource "aws_apigatewayv2_stage" "counter" {
