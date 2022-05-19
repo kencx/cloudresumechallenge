@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       frontend: ${{ steps.filter.outputs.frontend }}
-      lambda: ${{ steps.filter.outputs.lambda }}
+      infra: ${{ steps.filter.outputs.infra }}
     steps:
       - name: Checkout codebase
         uses: actions/checkout@v2
@@ -22,8 +22,9 @@ jobs:
           filters: |
             frontend:
               - 'site/docs/**'
-            lambda:
+            infra:
               - 'api/**'
+              - './*.tf'
 
   upload:
     needs: changes
@@ -57,9 +58,9 @@ jobs:
         run: |
           aws s3 sync ./site/docs/ s3://${{ secrets.AWS_S3_BUCKET }}
 
-  lambda:
+  infra-build:
     needs: changes
-    if: ${{ needs.changes.outputs.lambda == 'true' }}
+    if: ${{ needs.changes.outputs.infra == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout codebase
@@ -96,6 +97,8 @@ jobs:
           TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_TOKEN }}
         continue-on-error: true
 
+      # create plan output artifact
+
       - name: Write on pull request
         uses: actions/github-script@v6
         if: github.event_name == 'pull_request'
@@ -131,6 +134,13 @@ jobs:
         if: steps.plan.outcome == 'failure'
         run: exit 1
 
-      # - name: Terraform apply
-      #   if: github.ref == 'refs/heads/master' && github.event_name == "push"
-      #   run: terraform apply -auto-approve -input=false -var-file=auto.tfvars
+  # infra-release:
+  #   needs: [changes, infra-build]
+  #   if: ${{ needs.changes.outputs.infra == 'true' }}
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Terraform apply
+  #       if: github.ref == 'refs/heads/master' && github.event_name == "push"
+  #       run: terraform apply -auto-approve -input=false -var-file=auto.tfvars
+  #
+  #       # use plan output artifact
