@@ -1,4 +1,4 @@
-name: Upload to S3
+name: Deployment
 on:
   push:
     branches:
@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       frontend: ${{ steps.filter.outputs.frontend }}
+      lambda: ${{ steps.filter.outputs.lambda }}
     steps:
       - name: Checkout codebase
         uses: actions/checkout@v2

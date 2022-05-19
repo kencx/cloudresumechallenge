@@ -6,19 +6,19 @@ def lambda_handler(event, context):
     data = json.loads(event['body'])
 
     response = client.update_item(
-            TableName=data["table"],
-            Key={
-                "url": {
-                    'S': data["url"]
-                    }
-                },
-            UpdateExpression='SET visits = if_not_exists(visits, :start) + :inc',
-            ExpressionAttributeValues={
-                ':inc': {'N': '1'},
-                ':start': {'N': '0'},
-                },
-            ReturnValues="UPDATED_NEW"
-            )
+        TableName=data["table"],
+        Key={
+            "url": {
+                'S': data["url"]
+                }
+            },
+        UpdateExpression='SET visits = if_not_exists(visits, :start) + :inc',
+        ExpressionAttributeValues={
+            ':inc': {'N': '1'},
+            ':start': {'N': '0'},
+            },
+        ReturnValues="UPDATED_NEW"
+    )
 
     return {
         'statusCode': 200,
