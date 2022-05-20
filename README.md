@@ -28,6 +28,5 @@ CI/CD pipelines are conditionally run based on files modified using the
   vetted before the PR can be merged to master.
 
 ## TODO
-- [ ] Store remote state in S3 bucket
 - [ ] Python unit tests for Lambda function
 - [ ] Add API Gateway CloudWatch logging
