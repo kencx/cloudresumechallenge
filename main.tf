@@ -9,6 +9,14 @@ terraform {
       version = "3.14.0"
     }
   }
+  backend "s3" {
+    bucket = "cheo-dev-state"
+    key    = "cloudresumechallenge/terraform.tfstate"
+    region = "ap-southeast-1"
+
+    dynamodb_table = "cheo-dev-locks"
+    encrypt        = true
+  }
 }
 
 provider "aws" {
