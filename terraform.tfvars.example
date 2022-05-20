@@ -1,9 +1,0 @@
-aws_region  = "ap-southeast-1"
-subdomain   = "resume"
-site_domain = "example.com"
-
-cloudflare_api_token = ""
-
-table_name         = "siteVisits"
-sites              = ["example.com"]
-lambda_source_path = "api/lambda_function.py"

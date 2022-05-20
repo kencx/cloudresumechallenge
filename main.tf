@@ -9,6 +9,7 @@ terraform {
       version = "3.14.0"
     }
   }
+
   backend "s3" {
     bucket = "cheo-dev-state"
     key    = "cloudresumechallenge/terraform.tfstate"
@@ -212,11 +213,6 @@ resource "aws_apigatewayv2_route" "counter" {
   target           = "integrations/${aws_apigatewayv2_integration.lambda.id}"
   depends_on       = [aws_apigatewayv2_api.counter, aws_apigatewayv2_integration.lambda]
 }
-
-# resource "aws_cloudwatch_log_group" "api_gw" {
-#   name              = "aws/api_gw/${aws_apigatewayv2_api.counter.name}"
-#   retention_in_days = 30
-# }
 
 resource "aws_lambda_permission" "api_gw" {
   statement_id  = "AllowExecutionFromAPIGateway"

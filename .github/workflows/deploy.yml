@@ -57,6 +57,7 @@ jobs:
         id: validate
         run: terraform validate -no-color
 
+      # TODO: create plan output artifact
       - name: Terraform plan
         id: plan
         if: github.event_name == 'pull_request'
@@ -64,8 +65,6 @@ jobs:
         env:
           TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_TOKEN }}
         continue-on-error: true
-
-      # create plan output artifact
 
       - name: Write on pull request
         uses: actions/github-script@v6
@@ -110,10 +109,28 @@ jobs:
       (needs.filter.outputs.infra == 'true' && needs.plan.result == 'success')
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout codebase
+        uses: actions/checkout@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: "ap-southeast-1"
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Terraform init
+        id: init
+        run: terraform init
+
+      # TODO: use plan output artifact
       - name: Terraform apply
         run: terraform apply -auto-approve -input=false -var-file=auto.tfvars
-
-        # use plan output artifact
+        env:
+          TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_TOKEN }}
 
   upload:
     needs: [filter, apply]
