@@ -176,7 +176,7 @@ resource "aws_apigatewayv2_api" "counter" {
   cors_configuration {
     allow_headers = ["*"]
     allow_methods = ["OPTIONS", "POST"]
-    allow_origins = ["*"]
+    allow_origins = ["https://${local.site_url}"]
   }
 }
 
