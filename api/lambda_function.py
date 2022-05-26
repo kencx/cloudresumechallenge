@@ -2,7 +2,7 @@ import json
 import boto3
 
 def lambda_handler(event, context):
-    client = boto3.client('dynamodb')
+    client = boto3.client('dynamodb', region_name='ap-southeast-1')
     data = json.loads(event['body'])
 
     response = client.update_item(
