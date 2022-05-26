@@ -5,5 +5,7 @@ terraform.tfvars
 **/node_modules/*
 **/build.css
 
+__pycache__/
+venv/
 *.zip
 *.json
